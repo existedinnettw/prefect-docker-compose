@@ -33,7 +33,7 @@ The `docker-compose.yml` file contains five services:
 ## Prefect Server
 To run Prefect Server, open a terminal, navigate to the directory where you cloned this repository, and run:
 
-```
+```bash
 docker compose --profile server up
 ```
 
@@ -49,20 +49,20 @@ The Prefect Server container shares port 4200 with the host machine, so if you o
 
 Next, open another terminal in the same directory and run:
 
-```
+```bash
 docker compose run cli
 ```
 
 This runs an interactive Bash session in a container that shares a Docker network with the server you just started. If you run `ls`, you will see that the container shares the `flows` subdirectory of the repository on the host machine:
 
-```
+```bash
 flow.py
 root@fb032110b1c1:~/flows#
 ```
 
 To demonstrate the container is connected to the Prefect Server instance you launched earlier, run:
 
-```
+```bash
 python flow.py
 ```
 
@@ -70,7 +70,7 @@ Then, in a web browser on your host machine, navigate to `http://localhost:4200/
 
 If you'd like to use the CLI container to interact with Prefect Cloud instead of a local Prefect Server instance, update `docker-compose.yml` and change the agent service's `PREFECT_API_URL` environment variable to match your Prefect Cloud API URL. Then, uncomment the `PREFECT_API_KEY` environment variable and replace `YOUR_API_KEY` with your own API key. If you'd prefer not to put your API key in a Docker Compose file, you can also store it in an environment variable on your host machine and pass it through to Docker Compose like so:
 
-```
+```yaml
 - PREFECT_API_KEY=${PREFECT_API_KEY}
 ```
 
@@ -78,7 +78,7 @@ If you'd like to use the CLI container to interact with Prefect Cloud instead of
 
 You can run a Prefect Agent by updating `docker-compose.yml` and changing `YOUR_WORK_QUEUE_NAME` to match the name of the Prefect work queue you would like to connect to, and then running the following command:
 
-```
+```bash
 docker compose --profile agent up
 ```
 
@@ -123,13 +123,13 @@ Finally, the *Settings* JSON field should look like this:
 ```
 Replace the placeholders with the key and secret MinIO generated when you created the service account. You are now ready to deploy a flow to a MinIO storage bucket! If you want to try it, open a new terminal and run:
 
-```
+```bash
 docker compose run cli
 ```
 
 Then, when the CLI container starts and gives you a Bash prompt, run:
 
-```
+```bash
 prefect deployment build -sb "remote-file-system/your-storage-block-name" -n "Awesome MinIO deployment" -q "awesome" "flow.py:greetings"
 ```
 
@@ -139,8 +139,8 @@ Now, if you open `http://localhost:9001/buckets/prefect-flows/browse` in a web b
 
 You can run as many profiles as once as you'd like. For example, if you have created a deployment and want to start and agent for it, but don't want to open two separate terminals to run Prefect Server, an agent, *and* MinIO you can start them all at once by running: 
 
-```
-docker compose --profile server --profile minio --profile agent up
+```bash
+docker compose --profile server --profile minio --profile worker --profile agent up
 ```
 
 And if you want to start two separate agents that pull from different work queues? No problem! Just duplicate the agent service, give it a different name, and set its work queue name. For example:
