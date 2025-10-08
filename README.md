@@ -34,7 +34,7 @@ The `docker-compose.yml` file contains five services:
 To run Prefect Server, open a terminal, navigate to the directory where you cloned this repository, and run:
 
 ```
-docker-compose --profile server up
+docker compose --profile server up
 ```
 
 This will start PostgreSQL and Prefect Server. When the serveris ready, you will see a line that looks like:
@@ -50,7 +50,7 @@ The Prefect Server container shares port 4200 with the host machine, so if you o
 Next, open another terminal in the same directory and run:
 
 ```
-docker-compose run cli
+docker compose run cli
 ```
 
 This runs an interactive Bash session in a container that shares a Docker network with the server you just started. If you run `ls`, you will see that the container shares the `flows` subdirectory of the repository on the host machine:
@@ -74,12 +74,12 @@ If you'd like to use the CLI container to interact with Prefect Cloud instead of
 - PREFECT_API_KEY=${PREFECT_API_KEY}
 ```
 
-## Prefect Agent
+## Prefect Agent (deprecated)
 
 You can run a Prefect Agent by updating `docker-compose.yml` and changing `YOUR_WORK_QUEUE_NAME` to match the name of the Prefect work queue you would like to connect to, and then running the following command:
 
 ```
-docker-compose --profile agent up
+docker compose --profile agent up
 ```
 
 This will run a Prefect agent and connect to the work queue you provided. 
@@ -87,6 +87,10 @@ This will run a Prefect agent and connect to the work queue you provided.
 As with the CLI, you can also use Docker Compose to run an agent that connects to Prefect Cloud by updating the agent's `PREFECT_API_URL` and `PREFECT_API_KEY` settings in `docker-compose.yml`.
 
 ## MinIO Storage
+
+TODO: use alternative to MinIO due to recent changes:
+
+[MinIO Removes Web UI Features from Community Version, Pushes Users to Paid Plans](https://news.ycombinator.com/item?id=44136108)
 
 MinIO is an S3-compatible object store that works perfectly as remote storage for Prefect deployments. You can run it inside your corporate network and use it as a private, secure object store, or just run it locally in Docker Compose and use it for testing and experimenting with Prefect deployments. 
 
@@ -150,4 +154,4 @@ agent_two:
       - PREFECT_API_URL=http://server:4200/api
     profiles: ["agent"]
 ```
-Now, when you run `docker-compose --profile agent up`, both agents will start, connect to the Prefect Server API, and begin polling their work queues.
+Now, when you run `docker compose --profile agent up`, both agents will start, connect to the Prefect Server API, and begin polling their work queues.
