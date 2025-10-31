@@ -1,6 +1,6 @@
 # Prefect 2 with Docker Compose
 
-This repository contains everything you need to run Prefect Server, a Prefect agent, or the Prefect CLI using Docker Compose. 
+This repository contains everything you need to run Prefect Server, or the Prefect CLI using Docker Compose. 
 
 Thanks to Paco Ibañez for his excellent work in [this repository](https://github.com/fraibacas/prefect-orion), which helped me get started. I don't intend to replace his work. Instead, my repository aims to use Docker Compose to help you experiment with Prefect 2 locally and explore the different services you may need in a production environment.
 
@@ -17,8 +17,6 @@ There are a few reasons you might want to run Prefect using Docker Compose:
 
 # Limitations
 
-* If you run a Prefect agent in Docker, it will not be able to run `DockerContainer` deployments unless you share the host's Docker socket with the agent container because Docker-in-Docker is not supported. 
-
 # Getting Started
 
 Start by cloning this repository.
@@ -27,7 +25,6 @@ The `docker-compose.yml` file contains five services:
 * `database` - Postgres database for Prefect Server
 * `minio` - MinIO S3-compatible object store, useful for experimenting with remote file storage without needing a cloud storage account.
 * `server` - Prefect Server API and UI
-* `agent` - Prefect Agent
 * `cli` - A container that mounts this repository's `flows` directory and offers an ideal environment for building and applying deployments and running flows. 
 
 ## Prefect Server
@@ -68,23 +65,25 @@ python flow.py
 
 Then, in a web browser on your host machine, navigate to `http://localhost:4200/runs` and you will see the flow you just ran in your CLI container.
 
-If you'd like to use the CLI container to interact with Prefect Cloud instead of a local Prefect Server instance, update `docker-compose.yml` and change the agent service's `PREFECT_API_URL` environment variable to match your Prefect Cloud API URL. Then, uncomment the `PREFECT_API_KEY` environment variable and replace `YOUR_API_KEY` with your own API key. If you'd prefer not to put your API key in a Docker Compose file, you can also store it in an environment variable on your host machine and pass it through to Docker Compose like so:
+If you'd like to use the CLI container to interact with Prefect Cloud instead of a local Prefect Server instance, update `docker-compose.yml` and change the worker service's `PREFECT_API_URL` environment variable to match your Prefect Cloud API URL. Then, uncomment the `PREFECT_API_KEY` environment variable and replace `YOUR_API_KEY` with your own API key. If you'd prefer not to put your API key in a Docker Compose file, you can also store it in an environment variable on your host machine and pass it through to Docker Compose like so:
 
 ```yaml
 - PREFECT_API_KEY=${PREFECT_API_KEY}
 ```
 
-## Prefect Agent (deprecated)
+## Prefect Worker
 
-You can run a Prefect Agent by updating `docker-compose.yml` and changing `YOUR_WORK_QUEUE_NAME` to match the name of the Prefect work queue you would like to connect to, and then running the following command:
+Prefect Agents is deprecated, and migrated to Prefect Workers.
+
+You can run a Prefect Worker by updating `docker-compose.yml` and changing `YOUR_WORK_QUEUE_NAME` to match the name of the Prefect work queue you would like to connect to, and then running the following command:
 
 ```bash
-docker compose --profile agent up
+docker compose --profile worker up
 ```
 
-This will run a Prefect agent and connect to the work queue you provided. 
+This will run a Prefect worker and connect to the work queue you provided.
 
-As with the CLI, you can also use Docker Compose to run an agent that connects to Prefect Cloud by updating the agent's `PREFECT_API_URL` and `PREFECT_API_KEY` settings in `docker-compose.yml`.
+As with the CLI, you can also use Docker Compose to run a worker that connects to Prefect Cloud by updating the worker's `PREFECT_API_URL` and `PREFECT_API_KEY` settings in `docker-compose.yml`.
 
 ## MinIO Storage
 
@@ -100,11 +99,11 @@ If you'd like to use MinIO with Prefect in Docker compose, start them both at on
 docker compose --profile server --profile minio up
 ```
 
-Although Prefect Server won't need to talk to MinIO, Prefect agents and the Prefect CLI will need to talk to both MinIO _and_ Prefect Server to create and run depoyments, so it's best to start them simultaneously.
+Although Prefect Server won't need to talk to MinIO, Prefect worker and the Prefect CLI will need to talk to both MinIO _and_ Prefect Server to create and run depoyments, so it's best to start them simultaneously.
 
 After the MinIO container starts, you can load the MinIO UI in your web browser by navigating to `http://localhost:9000`. Sign in by entering `minioadmin` as both the username and password. 
 
-Create a bucket named `prefect-flows` to store your Prefect flows, and then click **Identity->Service Accounts** to create a service account. This will give you an access key and a secret you can enter in a Prefect block to let the Prefect CLI and agents write to and read from your MinIO storage bucket.
+Create a bucket named `prefect-flows` to store your Prefect flows, and then click **Identity->Service Accounts** to create a service account. This will give you an access key and a secret you can enter in a Prefect block to let the Prefect CLI and workers write to and read from your MinIO storage bucket.
 
 After you create a MinIO service account, open the Prefect UI at `http://localhost:4200`. Click **Blocks**, then add a **Remote File System** block. Give the block any name you'd like, but remember what name you choose because you will need it when creating a deployment. 
 
@@ -137,21 +136,21 @@ Now, if you open `http://localhost:9001/buckets/prefect-flows/browse` in a web b
 
 ## Next Steps
 
-You can run as many profiles as once as you'd like. For example, if you have created a deployment and want to start and agent for it, but don't want to open two separate terminals to run Prefect Server, an agent, *and* MinIO you can start them all at once by running: 
+You can run as many profiles as once as you'd like. For example, if you have created a deployment and want to start and woker for it, but don't want to open two separate terminals to run Prefect Server, an worker, *and* MinIO you can start them all at once by running: 
 
 ```bash
-docker compose --profile server --profile minio --profile worker --profile agent up
+docker compose --profile server --profile minio --profile worker up
 ```
 
-And if you want to start two separate agents that pull from different work queues? No problem! Just duplicate the agent service, give it a different name, and set its work queue name. For example:
+And if you want to start two separate workers that pull from different work queues? No problem! Just duplicate the worker service, give it a different name, and set its work queue name. For example:
 
 ```
-agent_two:
+worker_two:
     image: prefecthq/prefect:2.3.0-python3.10
     restart: always
-    entrypoint: ["prefect", "agent", "start", "-q", "YOUR_OTHER_WORK_QUEUE_NAME"]
+    entrypoint: ["prefect", "worker", "start", "-q", "YOUR_OTHER_WORK_QUEUE_NAME"]
     environment:
       - PREFECT_API_URL=http://server:4200/api
-    profiles: ["agent"]
+    profiles: ["worker"]
 ```
-Now, when you run `docker compose --profile agent up`, both agents will start, connect to the Prefect Server API, and begin polling their work queues.
+Now, when you run `docker compose --profile worker up`, both workers will start, connect to the Prefect Server API, and begin polling their work queues.

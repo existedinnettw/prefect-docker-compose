@@ -30,7 +30,7 @@ services:
 
   ### Prefect Server API and UI
   server:
-    image: prefecthq/prefect:3-python3.12
+    image: prefecthq/prefect:3-python3.14
     restart: always
     volumes:
       - prefect:/root/.prefect
@@ -54,7 +54,7 @@ services:
 
   ## Prefect Worker
   worker:
-    image: prefecthq/prefect:3-python3.12
+    image: prefecthq/prefect:3-python3.14
     restart: always
     entrypoint: ["/opt/prefect/entrypoint.sh", "prefect", "worker", "start", "-p", "${YOUR_WORK_QUEUE_NAME:-simple-pool}"]
     environment:
@@ -65,7 +65,7 @@ services:
 
   ### Prefect CLI
   cli:
-    image: prefecthq/prefect:3-python3.12
+    image: prefecthq/prefect:3-python3.14
     entrypoint: "bash"
     working_dir: "/root/flows"
     volumes:
